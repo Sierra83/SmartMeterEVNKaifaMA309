@@ -9,6 +9,7 @@ import paho.mqtt.client as mqtt
 from gurux_dlms.GXDLMSTranslator import GXDLMSTranslator
 from gurux_dlms.GXDLMSTranslatorMessage import GXDLMSTranslatorMessage
 from bs4 import BeautifulSoup
+import requests
 
 # EVN Schlüssel eingeben zB. "36C66639E48A8CA4D6BC8B282A793BBB"
 evn_schluessel = "dein_Schlüssel"
@@ -22,6 +23,13 @@ mqttuser =""
 mqttpasswort = ""
 #Aktuelle Werte auf Console ausgeben (True | False)
 printValue = True
+
+#Influxdb Verwenden (True | False)
+useInflux = False
+#Influxdb IP adresse Eingeben!
+InfluxIP = "192.168.1.10"
+InfluxPort = "8086"
+InfluxDatenbank = "Datenbankname"
 
 #Comport Config/Init
 comport = "/dev/ttyUSB0"
@@ -138,6 +146,29 @@ while 1:
         client.publish("Smartmeter/StromL2", StromL2)
         client.publish("Smartmeter/StromL3", StromL3)
         client.publish("Smartmeter/Leistungsfaktor", Leistungsfaktor)
+       
+    
+    
+    #Influxdb
+    if useInflux:
+	    url_string = 'http://' + InfluxIP + ':' + InfluxPort + '/write?db='+ InfluxDatenbank +'&precision=s'
+			
+		data_string = 'Smartmeter' + ' '
+		data_string += 'WirkenergieP=' + str(WirkenergieP) + ','
+		data_string += 'WirkenergieN=' + str(WirkenergieN) + ','
+		data_string += 'MomentanleistungP=' + str(MomentanleistungP) + ','
+		data_string += 'MomentanleistungN=' + str(MomentanleistungN) + ','
+		data_string += 'Momentanleistung=' + str(MomentanleistungP - MomentanleistungN) + ','
+		data_string += 'SpannungL1=' + str(SpannungL1) + ','
+		data_string += 'SpannungL2=' + str(SpannungL2) + ','
+		data_string += 'SpannungL3=' + str(SpannungL3) + ','
+		data_string += 'StromL1=' + str(StromL1) + ','
+		data_string += 'StromL2=' + str(StromL2) + ','
+		data_string += 'StromL3=' + str(StromL3) + ','
+		data_string += 'Leistungsfaktor=' + str(Leistungsfaktor)
+			
+		r = requests.post(url_string, data=data_string)
+        
     #except BaseException as err:
     #   print("Fehler beim Synchronisieren. Programm bitte ein weiteres mal Starten.")
     #   print()
